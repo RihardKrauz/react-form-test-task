@@ -1,0 +1,22 @@
+.loader-wrapper > * {
+  position: relative;
+}
+
+.form-field {
+
+  &--size-1 {
+    width: 164px;
+  }
+
+  &--size-2 {
+    width: 214px;
+  }
+
+  &--size-3 {
+    width: 414px;
+  }
+
+  &--select {
+    min-width: 200px;
+  }
+}

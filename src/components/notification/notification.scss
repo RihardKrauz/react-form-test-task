@@ -1,0 +1,26 @@
+.notification {
+  position: fixed;
+  bottom: 12px;
+  left: 12px;
+  animation-duration: 0.5s;
+  animation-name: slideIn;
+
+  &__body {
+    display: flex;
+  }
+
+  &__close-action > span {
+    padding: 4px 8px;
+    cursor: pointer;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
