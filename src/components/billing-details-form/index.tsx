@@ -1,4 +1,4 @@
-import React, {useState, useContext, SyntheticEvent, useMemo, useCallback} from 'react';
+import React, {useState, useContext, SyntheticEvent, useMemo, useCallback, useEffect, useRef} from 'react';
 import './styles.scss';
 import {NotificationContext} from '../notification';
 import {Form, Button, DropdownItemProps, DropdownProps} from 'semantic-ui-react';
@@ -26,11 +26,10 @@ interface BillingFormDictionaries {
 }
 
 const BillingDetailsForm: React.FC<BillingDetailsFormProps> = ({ onSuccess }) => {
+    const unmounted = useRef<boolean>(false);
     const [countries, setCountries] = useState<CountryItem[]>([]);
     const [states, setStates] = useState<DropdownItemProps[]>([]);
     const [loading, setLoading] = useState(true);
-
-    const formProps = {loading};
 
     const [name, onChangeName, nameError] = useFormControl('', validationRules.name);
     const [company, onChangeCompany, companyError] = useFormControl('', validationRules.company);
@@ -41,8 +40,18 @@ const BillingDetailsForm: React.FC<BillingDetailsFormProps> = ({ onSuccess }) =>
     const [address, onChangeAddress, addressError] = useFormControl('', validationRules.address);
     const [state, onChangeState, stateError] = useFormControl('', []);
 
+    const formProps = {loading};
+
     const notificationService = useContext(NotificationContext);
-    const [postData] = useHttpPostRequest();
+    const [postData, postDataCancellation] = useHttpPostRequest();
+
+    useEffect(() => {
+        return () => {
+            unmounted.current = true;
+            postDataCancellation.cancel('Save data cleanup');
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     useRequestOnInit<BillingInfo>(useHttpGetRequest, applyBillingInfoData, handleException, urlGetBillingInfo);
 
@@ -53,13 +62,13 @@ const BillingDetailsForm: React.FC<BillingDetailsFormProps> = ({ onSuccess }) =>
 
         setCountries(billingInfo.countries);
         setInitFormValues(billingInfo.data, { countries: billingInfo.countries });
-    };
+    }
 
     function handleException(ex: string) {
         setLoading(false);
         console.error(ex);
         notificationService?.showErrorMessage('Error on getting billing info');
-    };
+    }
 
     function setInitFormValues(values: BillingDetails, dictionaries: BillingFormDictionaries) {
         onChangeName(values.name);
@@ -83,10 +92,12 @@ const BillingDetailsForm: React.FC<BillingDetailsFormProps> = ({ onSuccess }) =>
 
         setLoading(true);
         postData(urlSaveBillingInfo, formDataToSave).then(() => {
+            if (unmounted.current) { return; }
             setLoading(false);
             notificationService?.showSuccessMessage('Billing details has been successfully saved');
             onSuccess();
         }).catch(() => {
+            if (unmounted.current) { return; }
             setLoading(false);
             notificationService?.showErrorMessage('Error while saving data');
         });
@@ -119,7 +130,7 @@ const BillingDetailsForm: React.FC<BillingDetailsFormProps> = ({ onSuccess }) =>
         <h2>Billing Details</h2>
         <Form {...formProps} onSubmit={saveDetails}>
             <Form.Input
-                className='form-field--size-3'
+                className='form-field form-field--size-3'
                 label='Customer Full Name'
                 placeholder='e.g. John Smith'
                 value={name}
@@ -127,7 +138,7 @@ const BillingDetailsForm: React.FC<BillingDetailsFormProps> = ({ onSuccess }) =>
                 onChange={onChangeName}
             />
             <Form.Input
-                className='form-field--size-3'
+                className='form-field form-field--size-3'
                 label='Company Name'
                 placeholder='e.g. AppFollow'
                 value={company}
@@ -136,14 +147,14 @@ const BillingDetailsForm: React.FC<BillingDetailsFormProps> = ({ onSuccess }) =>
             />
             <Form.Group>
                 <Form.Select
-                    className='form-field--size-2 form-field--select'
+                    className='form-field form-field--size-2 form-field--select'
                     label='Country'
                     value={country}
                     options={countriesSelectOptions}
                     onChange={onChangeCountrySelect}
                 />
                 {selectedCountryInEuList(country) && <Form.Input
-                    className='form-field--size-2'
+                    className='form-field form-field--size-2'
                     label='VAT ID'
                     placeholder='e.g. 4'
                     required
@@ -154,7 +165,7 @@ const BillingDetailsForm: React.FC<BillingDetailsFormProps> = ({ onSuccess }) =>
             </Form.Group>
             <Form.Group>
                 <Form.Input
-                    className='form-field--size-2'
+                    className='form-field form-field--size-2'
                     label='City'
                     placeholder='e.g. Moscow'
                     value={city}
@@ -162,7 +173,7 @@ const BillingDetailsForm: React.FC<BillingDetailsFormProps> = ({ onSuccess }) =>
                     onChange={onChangeCity}
                 />
                 <Form.Select
-                    className='form-field--size-2'
+                    className='form-field form-field--size-2'
                     label='State'
                     value={state}
                     options={states}
@@ -170,7 +181,7 @@ const BillingDetailsForm: React.FC<BillingDetailsFormProps> = ({ onSuccess }) =>
                 />
             </Form.Group>
             <Form.Input
-                className='form-field--size-3'
+                className='form-field form-field--size-3'
                 label='Zip Code'
                 placeholder='e.g. 55111'
                 value={zip_code}
@@ -178,7 +189,7 @@ const BillingDetailsForm: React.FC<BillingDetailsFormProps> = ({ onSuccess }) =>
                 onChange={onChangeZip}
             />
             <Form.TextArea
-                className='form-field--size-3'
+                className='form-field form-field--size-3'
                 label='Address'
                 placeholder='e.g. 240 Iroquois Ave.'
                 value={address}

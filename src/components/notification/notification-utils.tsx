@@ -44,14 +44,14 @@ export const withNotifications = <T extends object>(WrappedComponent: React.Comp
 
         return (<>
             <NotificationContext.Provider value={notificationService}>
-                <WrappedComponent {...props}></WrappedComponent>
+                <WrappedComponent {...props} />
             </NotificationContext.Provider>
 
             {isVisible && <Portal>
                 <Notification
                     text={text}
                     color={color}
-                    close={() => dispatch(hideNotificationAction())}></Notification>
+                    close={() => dispatch(hideNotificationAction())} />
             </Portal>}
         </>);
     };
